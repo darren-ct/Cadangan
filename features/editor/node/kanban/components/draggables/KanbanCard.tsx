@@ -7,15 +7,23 @@ import { Row, SelectOption } from "@/widgets/types";
 
 interface Props {
   record: Row;
+  onDragStart: (
+    recordId: string,
+    event: React.DragEvent<HTMLDivElement>
+  ) => void;
 }
 
-export const KanbanCard = React.memo(function KanbanCard({ record }: Props) {
+export const KanbanCard = React.memo(function KanbanCard({
+  record,
+  onDragStart,
+}: Props) {
   const recordKeyValuePairs = React.useMemo(() => {
     return Object.entries(record);
   }, [record]);
 
   return (
     <Stack
+      draggable={true}
       direction="column"
       spacing={1.5}
       alignItems="flex-start"
@@ -24,12 +32,21 @@ export const KanbanCard = React.memo(function KanbanCard({ record }: Props) {
       sx={{
         border: "2px solid rgba(0,0,0,.2)",
         backgroundColor: "white",
-        cursor: "pointer",
+        cursor: "grab",
         width: "100%",
         transition: "100ms ease-in",
         "&:hover": {
           borderColor: " rgba(0,0,0,.3)",
         },
+      }}
+      onDragStart={(e) => {
+        onDragStart(record._id, e);
+      }}
+      onDragEnd={(e) => {
+        e.stopPropagation();
+      }}
+      onDrag={(e) => {
+        e.stopPropagation();
       }}
     >
       {recordKeyValuePairs.map((keyValuePair) => (

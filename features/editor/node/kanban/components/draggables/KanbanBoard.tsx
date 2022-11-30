@@ -11,7 +11,7 @@ import {
 import { useRouter } from "next/router";
 import * as React from "react";
 
-import { addRecord } from "@/api";
+import { addRecord, updateRecord } from "@/api";
 import { AddIcon, CollapseIcon } from "@/assets/icons";
 import { useDisclose } from "@/hooks";
 import { Row, SelectOption, Table } from "@/widgets/types";
@@ -27,6 +27,8 @@ interface Props {
   refetchRecords: <TPageData>(
     options?: RefetchOptions & RefetchQueryFilters<TPageData>
   ) => Promise<QueryObserverResult<Row[], unknown>>;
+  onDraggingId: string;
+  setOnDraggingId: React.Dispatch<React.SetStateAction<string>>;
 }
 
 export const KanbanBoard = React.memo(function KanbanBoard({
@@ -35,6 +37,8 @@ export const KanbanBoard = React.memo(function KanbanBoard({
   table,
   records,
   refetchRecords,
+  onDraggingId,
+  setOnDraggingId,
 }: Props) {
   const { databaseId } = useRouter().query;
 
@@ -61,6 +65,7 @@ export const KanbanBoard = React.memo(function KanbanBoard({
       if (!values) {
         return;
       }
+
       const filteredValues = {};
 
       const keyValuePair = Object.entries(values);
@@ -80,8 +85,9 @@ export const KanbanBoard = React.memo(function KanbanBoard({
       });
 
       // Create Record
+
       try {
-        const data = await addRecord({
+        await addRecord({
           dbId: databaseId as string,
           tableId: table.id,
           variables: {
@@ -89,7 +95,6 @@ export const KanbanBoard = React.memo(function KanbanBoard({
           },
         });
 
-        console.log({ data });
         refetchRecords();
       } catch (err) {
         console.log(err);
@@ -97,6 +102,49 @@ export const KanbanBoard = React.memo(function KanbanBoard({
     },
     [databaseId, refetchRecords, table.id]
   );
+
+  const onUpdateRecordHandler = React.useCallback(async () => {
+    try {
+      const body = {
+        [fieldName]: option.value,
+      };
+
+      await updateRecord({
+        dbId: databaseId as string,
+        tableId: table.id,
+        variables: {
+          id: onDraggingId,
+          body,
+        },
+      });
+      refetchRecords();
+    } catch (err) {
+      console.log({ err });
+    }
+  }, [
+    databaseId,
+    fieldName,
+    onDraggingId,
+    option.value,
+    refetchRecords,
+    table.id,
+  ]);
+
+  const onDragStartHandler = React.useCallback(
+    (recordId: string, event: React.DragEvent<HTMLDivElement>) => {
+      event.stopPropagation();
+      setOnDraggingId(recordId);
+      return event.dataTransfer.setData("text/plain", "");
+    },
+    [setOnDraggingId]
+  );
+
+  const onDropHandler = React.useCallback(() => {
+    console.log("dropped children");
+
+    onUpdateRecordHandler();
+    setOnDraggingId("");
+  }, [onUpdateRecordHandler, setOnDraggingId]);
 
   // Optional Rendering
   if (!isOpen) {
@@ -163,6 +211,13 @@ export const KanbanBoard = React.memo(function KanbanBoard({
       </Box>
 
       <Box
+        onDrop={(e) => {
+          e.stopPropagation();
+          onDropHandler();
+        }}
+        onDragOver={(e) => {
+          e.preventDefault();
+        }}
         sx={{
           paddingY: filteredRecords.length > 1 ? 0.5 : 0,
           borderTop:
@@ -176,7 +231,11 @@ export const KanbanBoard = React.memo(function KanbanBoard({
       >
         <Stack direction="column" alignItems="center" spacing={3}>
           {filteredRecords.map((record) => (
-            <KanbanCard key={record._id} record={record} />
+            <KanbanCard
+              key={record._id}
+              record={record}
+              onDragStart={onDragStartHandler}
+            />
           ))}
         </Stack>
       </Box>

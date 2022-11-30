@@ -17,6 +17,9 @@ interface Props {
 export const KanbanItem = React.memo(function KanbanItem({ item }: Props) {
   const { databaseId: dbId } = useRouter().query;
 
+  // State
+  const [onDraggingId, setOnDraggingId] = React.useState<string>("");
+
   // Memo
   const kanbanProps = React.useMemo(() => {
     return item.props as KanbanProps;
@@ -126,6 +129,8 @@ export const KanbanItem = React.memo(function KanbanItem({ item }: Props) {
           fieldName={kanbanProps.stackingField?.name}
           records={records}
           refetchRecords={refetchRecords}
+          onDraggingId={onDraggingId}
+          setOnDraggingId={setOnDraggingId}
         />
       ))}
     </Stack>
