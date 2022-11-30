@@ -39,7 +39,7 @@ export const ExplorerTab = React.memo(function ExplorerTab({
           {draggables
             .filter((draggable) => !draggable.containerId)
             .map((item) => {
-              return <ExplorerItem item={item} />;
+              return <ExplorerItem item={item} key={item.id} />;
             })}
 
           <Stack

@@ -3,10 +3,17 @@ import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
-import { UseMutateFunction } from "@tanstack/react-query";
+import {
+  InfiniteData,
+  QueryObserverResult,
+  RefetchOptions,
+  RefetchQueryFilters,
+  UseMutateFunction,
+} from "@tanstack/react-query";
 import { useRouter } from "next/router";
 import * as React from "react";
 
+import { InfiniteRecord } from "@/api/types";
 import { AddIcon, CollapseIcon } from "@/assets/icons";
 import { useDisclose } from "@/hooks";
 import {
@@ -34,6 +41,9 @@ interface Props {
     WidgetRowOnChangeParams<unknown> & AdditionalMutateRecordParams,
     unknown
   >;
+  refetch: <TPageData>(
+    options?: RefetchOptions & RefetchQueryFilters<TPageData>
+  ) => Promise<QueryObserverResult<InfiniteData<InfiniteRecord>, unknown>>;
   onDraggingId: string;
   setOnDraggingId: React.Dispatch<React.SetStateAction<string>>;
 }
@@ -45,6 +55,7 @@ export const KanbanBoard = React.memo(function KanbanBoard({
   hiddenFields,
   records,
   mutateRecord,
+  refetch,
   onDraggingId,
   setOnDraggingId,
 }: Props) {
@@ -99,11 +110,13 @@ export const KanbanBoard = React.memo(function KanbanBoard({
           body: filteredValues,
           event: "CREATE_RECORD",
         });
+
+        refetch();
       } catch (err) {
         console.log(err);
       }
     },
-    [mutateRecord]
+    [mutateRecord, refetch]
   );
 
   const onUpdateRecordHandler = React.useCallback(async () => {
@@ -118,10 +131,12 @@ export const KanbanBoard = React.memo(function KanbanBoard({
         event: "UPDATE_RECORD",
         field,
       });
+
+      refetch();
     } catch (err) {
       console.log({ err });
     }
-  }, [field, mutateRecord, onDraggingId, option.value]);
+  }, [field, mutateRecord, onDraggingId, option.value, refetch]);
 
   const onDragStartHandler = React.useCallback(
     (recordId: string, event: React.DragEvent<HTMLDivElement>) => {

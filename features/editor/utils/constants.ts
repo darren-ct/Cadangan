@@ -30,6 +30,7 @@ export const widgetList: Record<DraggableTypes, DraggableProps | undefined> = {
   filter: undefined,
   sideMenu: undefined,
   tabContainer: undefined,
+  kanban: undefined,
 };
 
 export const todoActionList: Record<string, FormTodoAction[]> = {

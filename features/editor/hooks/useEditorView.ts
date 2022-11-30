@@ -178,6 +178,7 @@ export const useEditorView = () => {
   // Handler Functions
   const handleDrop = React.useCallback(
     (layout: LayoutItem[]) => {
+      console.log("Dropped Main");
       const fixedLayouts = handleFixedDrop(activeDraggable.type, layout);
 
       setDefaultLayouts(() => fixedLayouts);
@@ -195,6 +196,7 @@ export const useEditorView = () => {
 
   const handleDragStart = React.useCallback(
     (_layout: LayoutItem[], oldItem: LayoutItem) => {
+      console.log("Dragged Main");
       setActiveId(oldItem.i);
       onShowGridHelperOpen();
     },

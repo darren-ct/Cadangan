@@ -57,6 +57,7 @@ export const KanbanItem = React.memo(function KanbanItem({ item }: Props) {
     onRowChange,
     dataSource: records,
     hiddenFields,
+    refetch,
   } = useDataSource(dbId as string, kanbanProps.table, options, item.id);
 
   const { mutate: mutateRecord } = useMutateRecord({ onRowChange });
@@ -119,6 +120,7 @@ export const KanbanItem = React.memo(function KanbanItem({ item }: Props) {
           hiddenFields={hiddenFields}
           records={records}
           mutateRecord={mutateRecord}
+          refetch={refetch}
           onDraggingId={onDraggingId}
           setOnDraggingId={setOnDraggingId}
         />
