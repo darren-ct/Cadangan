@@ -1,10 +1,10 @@
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/router";
 import * as React from "react";
 
 import type { Draggable, KanbanProps } from "@/features/editor";
+import { useMutateRecord } from "@/widgets/api";
 import { useDataSource } from "@/widgets/hooks";
 import type { DataSourceOptions, FieldOptionsSelect } from "@/widgets/types";
 
@@ -53,24 +53,13 @@ export const KanbanItem = React.memo(function KanbanItem({ item }: Props) {
   }, [kanbanProps.filter, kanbanProps.hiddenFields, kanbanProps.sort]);
 
   // Hooks
-  const { onGetForeignRecords } = useDataSource(
-    dbId as string,
-    kanbanProps.table,
-    options,
-    item.id
-  );
+  const {
+    onRowChange,
+    dataSource: records,
+    hiddenFields,
+  } = useDataSource(dbId as string, kanbanProps.table, options, item.id);
 
-  const { data: records, refetch: refetchRecords } = useQuery(
-    ["getKanbanRecords", kanbanProps.table],
-    () =>
-      onGetForeignRecords({
-        table: kanbanProps.table,
-        query: options as unknown as Record<string, unknown>,
-      }),
-    {
-      enabled: !!kanbanProps.table && !!kanbanProps.stackingField,
-    }
-  );
+  const { mutate: mutateRecord } = useMutateRecord({ onRowChange });
 
   // Optional Rendering
   if (!kanbanProps.table) {
@@ -124,11 +113,12 @@ export const KanbanItem = React.memo(function KanbanItem({ item }: Props) {
       {selectOptions.map((option) => (
         <KanbanBoard
           key={option.id}
-          table={kanbanProps.table}
           option={option}
-          fieldName={kanbanProps.stackingField?.name}
+          table={kanbanProps.table}
+          field={kanbanProps.stackingField}
+          hiddenFields={hiddenFields}
           records={records}
-          refetchRecords={refetchRecords}
+          mutateRecord={mutateRecord}
           onDraggingId={onDraggingId}
           setOnDraggingId={setOnDraggingId}
         />

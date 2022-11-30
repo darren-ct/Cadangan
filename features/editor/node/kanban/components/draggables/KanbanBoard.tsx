@@ -3,40 +3,48 @@ import IconButton from "@mui/material/IconButton";
 import Stack from "@mui/material/Stack";
 import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
-import {
-  QueryObserverResult,
-  RefetchOptions,
-  RefetchQueryFilters,
-} from "@tanstack/react-query";
+import { UseMutateFunction } from "@tanstack/react-query";
 import { useRouter } from "next/router";
 import * as React from "react";
 
-import { addRecord, updateRecord } from "@/api";
 import { AddIcon, CollapseIcon } from "@/assets/icons";
 import { useDisclose } from "@/hooks";
-import { Row, SelectOption, Table } from "@/widgets/types";
+import {
+  AdditionalMutateRecordParams,
+  Field,
+  Row,
+  SelectOption,
+  Table,
+  ToolbarHiddenFieldsValue,
+  WidgetRowOnChangeParams,
+} from "@/widgets/types";
 
 import { KanbanCard } from "./KanbanCard";
 import { KanbanModal } from "./KanbanModal";
 
 interface Props {
   option: SelectOption;
-  fieldName: string;
+  field: Field;
+  hiddenFields: ToolbarHiddenFieldsValue[];
   table: Table;
   records: Row[];
-  refetchRecords: <TPageData>(
-    options?: RefetchOptions & RefetchQueryFilters<TPageData>
-  ) => Promise<QueryObserverResult<Row[], unknown>>;
+  mutateRecord: UseMutateFunction<
+    Row | Row[],
+    Error,
+    WidgetRowOnChangeParams<unknown> & AdditionalMutateRecordParams,
+    unknown
+  >;
   onDraggingId: string;
   setOnDraggingId: React.Dispatch<React.SetStateAction<string>>;
 }
 
 export const KanbanBoard = React.memo(function KanbanBoard({
   option,
-  fieldName,
   table,
+  field,
+  hiddenFields,
   records,
-  refetchRecords,
+  mutateRecord,
   onDraggingId,
   setOnDraggingId,
 }: Props) {
@@ -54,10 +62,10 @@ export const KanbanBoard = React.memo(function KanbanBoard({
   const filteredRecords = React.useMemo(() => {
     return (
       records?.filter(
-        (record) => (record[fieldName] as SelectOption).value === option.value
+        (record) => (record[field.name] as SelectOption).value === option.value
       ) ?? []
     );
-  }, [fieldName, option.value, records]);
+  }, [field.name, option.value, records]);
 
   // useCallbacks
   const onCreateRecordHandler = React.useCallback(
@@ -85,50 +93,35 @@ export const KanbanBoard = React.memo(function KanbanBoard({
       });
 
       // Create Record
-
       try {
-        await addRecord({
-          dbId: databaseId as string,
-          tableId: table.id,
-          variables: {
-            body: filteredValues,
-          },
+        mutateRecord({
+          recordId: null,
+          body: filteredValues,
+          event: "CREATE_RECORD",
         });
-
-        refetchRecords();
       } catch (err) {
         console.log(err);
       }
     },
-    [databaseId, refetchRecords, table.id]
+    [mutateRecord]
   );
 
   const onUpdateRecordHandler = React.useCallback(async () => {
     try {
       const body = {
-        [fieldName]: option.value,
+        [field.name]: option.value,
       };
 
-      await updateRecord({
-        dbId: databaseId as string,
-        tableId: table.id,
-        variables: {
-          id: onDraggingId,
-          body,
-        },
+      mutateRecord({
+        recordId: onDraggingId,
+        body,
+        event: "UPDATE_RECORD",
+        field,
       });
-      refetchRecords();
     } catch (err) {
       console.log({ err });
     }
-  }, [
-    databaseId,
-    fieldName,
-    onDraggingId,
-    option.value,
-    refetchRecords,
-    table.id,
-  ]);
+  }, [field, mutateRecord, onDraggingId, option.value]);
 
   const onDragStartHandler = React.useCallback(
     (recordId: string, event: React.DragEvent<HTMLDivElement>) => {
@@ -140,8 +133,6 @@ export const KanbanBoard = React.memo(function KanbanBoard({
   );
 
   const onDropHandler = React.useCallback(() => {
-    console.log("dropped children");
-
     onUpdateRecordHandler();
     setOnDraggingId("");
   }, [onUpdateRecordHandler, setOnDraggingId]);
@@ -234,6 +225,7 @@ export const KanbanBoard = React.memo(function KanbanBoard({
             <KanbanCard
               key={record._id}
               record={record}
+              hiddenFields={hiddenFields}
               onDragStart={onDragStartHandler}
             />
           ))}
@@ -294,7 +286,7 @@ export const KanbanBoard = React.memo(function KanbanBoard({
         databaseId={databaseId as string}
         table={table}
         option={option}
-        fieldName={fieldName}
+        fieldName={field.name}
       />
     </Stack>
   );

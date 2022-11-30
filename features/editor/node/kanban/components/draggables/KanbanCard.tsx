@@ -3,10 +3,11 @@ import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import * as React from "react";
 
-import { Row, SelectOption } from "@/widgets/types";
+import { Row, SelectOption, ToolbarHiddenFieldsValue } from "@/widgets/types";
 
 interface Props {
   record: Row;
+  hiddenFields: ToolbarHiddenFieldsValue[];
   onDragStart: (
     recordId: string,
     event: React.DragEvent<HTMLDivElement>
@@ -15,11 +16,33 @@ interface Props {
 
 export const KanbanCard = React.memo(function KanbanCard({
   record,
+  hiddenFields,
   onDragStart,
 }: Props) {
   const recordKeyValuePairs = React.useMemo(() => {
-    return Object.entries(record);
-  }, [record]);
+    const keyValuePairs = Object.entries(record);
+    const filteredKeyValuePairs = keyValuePairs.filter((keyValue) => {
+      let isShown = true;
+
+      hiddenFields.every((field) => {
+        if (keyValue[0] === "no") {
+          isShown = false;
+          return false;
+        }
+
+        if (field.field === keyValue[0]) {
+          isShown = false;
+          return false;
+        }
+
+        return true;
+      });
+
+      return isShown;
+    });
+
+    return filteredKeyValuePairs;
+  }, [hiddenFields, record]);
 
   return (
     <Stack
