@@ -8,22 +8,20 @@ import {
   QueryObserverResult,
   RefetchOptions,
   RefetchQueryFilters,
-  UseMutateFunction,
 } from "@tanstack/react-query";
 import { useRouter } from "next/router";
 import * as React from "react";
 
+import { addRecord, updateRecord } from "@/api";
 import { InfiniteRecord } from "@/api/types";
 import { AddIcon, CollapseIcon } from "@/assets/icons";
 import { useDisclose } from "@/hooks";
 import {
-  AdditionalMutateRecordParams,
   Field,
   Row,
   SelectOption,
   Table,
   ToolbarHiddenFieldsValue,
-  WidgetRowOnChangeParams,
 } from "@/widgets/types";
 
 import { KanbanCard } from "./KanbanCard";
@@ -35,12 +33,6 @@ interface Props {
   hiddenFields: ToolbarHiddenFieldsValue[];
   table: Table;
   records: Row[];
-  mutateRecord: UseMutateFunction<
-    Row | Row[],
-    Error,
-    WidgetRowOnChangeParams<unknown> & AdditionalMutateRecordParams,
-    unknown
-  >;
   refetch: <TPageData>(
     options?: RefetchOptions & RefetchQueryFilters<TPageData>
   ) => Promise<QueryObserverResult<InfiniteData<InfiniteRecord>, unknown>>;
@@ -54,7 +46,6 @@ export const KanbanBoard = React.memo(function KanbanBoard({
   field,
   hiddenFields,
   records,
-  mutateRecord,
   refetch,
   onDraggingId,
   setOnDraggingId,
@@ -105,10 +96,12 @@ export const KanbanBoard = React.memo(function KanbanBoard({
 
       // Create Record
       try {
-        mutateRecord({
-          recordId: null,
-          body: filteredValues,
-          event: "CREATE_RECORD",
+        await addRecord({
+          dbId: databaseId as string,
+          tableId: table.id,
+          variables: {
+            body: filteredValues,
+          },
         });
 
         refetch();
@@ -116,7 +109,7 @@ export const KanbanBoard = React.memo(function KanbanBoard({
         console.log(err);
       }
     },
-    [mutateRecord, refetch]
+    [databaseId, refetch, table.id]
   );
 
   const onUpdateRecordHandler = React.useCallback(async () => {
@@ -125,18 +118,20 @@ export const KanbanBoard = React.memo(function KanbanBoard({
         [field.name]: option.value,
       };
 
-      mutateRecord({
-        recordId: onDraggingId,
-        body,
-        event: "UPDATE_RECORD",
-        field,
+      await updateRecord({
+        dbId: databaseId as string,
+        tableId: table.id,
+        variables: {
+          id: onDraggingId,
+          body,
+        },
       });
 
       refetch();
     } catch (err) {
       console.log({ err });
     }
-  }, [field, mutateRecord, onDraggingId, option.value, refetch]);
+  }, [databaseId, field.name, onDraggingId, option.value, refetch, table.id]);
 
   const onDragStartHandler = React.useCallback(
     (recordId: string, event: React.DragEvent<HTMLDivElement>) => {
@@ -209,8 +204,8 @@ export const KanbanBoard = React.memo(function KanbanBoard({
           backgroundColor: theme.palette.primary[500],
           fontSize: theme.typography.fontSize,
           borderRadius: 16,
-          paddingX: 2,
-          paddingY: 1,
+          paddingX: 1.6,
+          paddingY: 0.2,
         })}
       >
         {option.value}
@@ -247,10 +242,15 @@ export const KanbanBoard = React.memo(function KanbanBoard({
         </Stack>
       </Box>
 
-      <Stack direction="row" alignItems="center" justifyContent="space-between">
+      <Stack
+        position="relative"
+        direction="row"
+        alignItems="center"
+        justifyContent="space-between"
+      >
         <Typography
           sx={(theme) => ({
-            fontSize: theme.typography.fontSize,
+            fontSize: theme.typography.fontSize - 2,
             color: theme.palette.primary[500],
           })}
         >{`${filteredRecords.length}  record${
@@ -258,6 +258,8 @@ export const KanbanBoard = React.memo(function KanbanBoard({
         }`}</Typography>
         <Tooltip title="Add record" placement="right">
           <Box
+            position="absolute"
+            left="50%"
             onClick={onModalOpen}
             sx={(theme) => ({
               borderRadius: "100vh",
@@ -269,8 +271,9 @@ export const KanbanBoard = React.memo(function KanbanBoard({
               cursor: "pointer",
               backgroundColor: theme.palette.primary[500],
               transition: "100ms linear",
+              transform: "translate(-50%)",
               "&:hover": {
-                transform: "scale(1.1)",
+                transform: "scale(1.1) translate(-50%)",
               },
             })}
           >

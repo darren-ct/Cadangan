@@ -4,7 +4,6 @@ import { useRouter } from "next/router";
 import * as React from "react";
 
 import type { Draggable, KanbanProps } from "@/features/editor";
-import { useMutateRecord } from "@/widgets/api";
 import { useDataSource } from "@/widgets/hooks";
 import type { DataSourceOptions, FieldOptionsSelect } from "@/widgets/types";
 
@@ -54,13 +53,10 @@ export const KanbanItem = React.memo(function KanbanItem({ item }: Props) {
 
   // Hooks
   const {
-    onRowChange,
     dataSource: records,
     hiddenFields,
     refetch,
   } = useDataSource(dbId as string, kanbanProps.table, options, item.id);
-
-  const { mutate: mutateRecord } = useMutateRecord({ onRowChange });
 
   // Optional Rendering
   if (!kanbanProps.table) {
@@ -119,7 +115,6 @@ export const KanbanItem = React.memo(function KanbanItem({ item }: Props) {
           field={kanbanProps.stackingField}
           hiddenFields={hiddenFields}
           records={records}
-          mutateRecord={mutateRecord}
           refetch={refetch}
           onDraggingId={onDraggingId}
           setOnDraggingId={setOnDraggingId}

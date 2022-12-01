@@ -8,7 +8,7 @@ export const useNavLogo = (item: Draggable) => {
   const [pickedLinkId, setPickedLinkId] = React.useState<string>("");
 
   const pickedLinkData = React.useMemo(() => {
-    return pickedLinkId === (item.props as NavProps).navLogo.id
+    return pickedLinkId === (item.props as NavProps).navLogo?.id
       ? (item.props as NavProps).navLogo
       : null;
   }, [item.props, pickedLinkId]);

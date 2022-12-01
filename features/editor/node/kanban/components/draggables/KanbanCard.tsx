@@ -78,7 +78,7 @@ export const KanbanCard = React.memo(function KanbanCard({
             sx={(theme) => ({
               fontSize: theme.typography.fontSize,
               color: "#828282",
-              fontWeight: 500,
+              fontWeight: 600,
               wordWrap: "break-word",
             })}
           >
@@ -87,8 +87,8 @@ export const KanbanCard = React.memo(function KanbanCard({
           {typeof keyValuePair[1] === "object" && (
             <Box
               sx={(theme) => ({
-                paddingY: 0.5,
-                paddingX: 1,
+                paddingY: 0.2,
+                paddingX: 1.6,
                 borderRadius: 16,
                 backgroundColor: (keyValuePair[1] as SelectOption).color,
                 color: "white",
